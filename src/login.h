@@ -6,6 +6,40 @@
 #include <stdlib.h>
 #include "global.h"
 #include "delay.h"
+#include "project.h"
+
+void showLoginWindow();
+void showRegisterWindow();
+int checkCredential(char usern[30], char passw[30]);
+int userExists();
+void loginAndRedirect(){
+	if (LOGIN_ATTEMPT >= MAX_LOGIN_ATTEMPT)
+	{
+		printf("%10s %20s", "","Max attempt reached. Wait for 500s");
+		fflush(stdout);
+		delay(500);
+	}
+	++LOGIN_ATTEMPT;
+	showLoginWindow();
+	if (checkCredential(USER.USERNAME, USER.PASSWORD) == 1)
+	{
+		printf("\n You are valid user \n");
+		fflush(stdout);
+		delay(2);
+
+		/*
+			All the project works that needs user authentication goes here
+
+		*/
+		startProjectTasks();
+		getch();
+	}else{
+		printf("\n You are not valid user \n");
+		fflush(stdout);
+		delay(2);
+		loginAndRedirect();
+	}
+}
 
 
 /*
@@ -64,8 +98,26 @@ void showRegisterWindow(){
 	tempPassword[i] = '\0';
 	if (strcmp(tempUser.PASSWORD, tempPassword) == 0)
 	{
-		printf("Here we save user to a file\n");
-		exit(0);
+		FILE *user_filep;
+		user_filep = fopen(USER_FILE, "ab");
+		if (user_filep == NULL)
+		{
+			printf("Error adding user to a file.\n\n");
+			exit(0);
+		}
+		if (userExists() == 1)
+		{
+			tempUser.USER_TYPE = USER_NORMAL;
+		}else{
+			tempUser.USER_TYPE = USER_ADMIN;
+		}
+		fwrite(&tempUser, sizeof(tempUser), 1, user_filep);
+		printf("%10s %20s", "", "User successfully saved\n\n");
+		fclose(user_filep);
+		fflush(stdout);
+		delay(2);
+		loginAndRedirect();
+
 	}else{
 		clrscr();
 		printf("%10s %20s", "", "Password did not match, Try again\n\n");
